@@ -5,13 +5,14 @@
  *  Author: Admin
  */ 
 // ATMEL ATTINY13 - (Fuse E:FF, H:FF, L:6A)
-//
-//                  +-\/-+
-// AinX (D X) PB5  1|    |8  Vcc
-// AinX (D X) PB3  2|    |7  PB2 (D X) AinX - Current sensor pin
-// AinX (D X) PB4  3|    |6  PB1 (D X) PWM	- Tone port
-//            GND  4|    |5  PB0 (D X) PWM	- millis timer
-//                  +----+
+/*
+*                                               +-\/-+
+*                              AinX (D X) PB5  1|    |8  Vcc
+*      Power supply relay      AinX (D X) PB3  2|    |7  PB2 (D X) AinX - Current sensor pin
+*      Start relay             AinX (D X) PB4  3|    |6  PB1 (D X) PWM	- Tone port
+*                                         GND  4|    |5  PB0 (D X) PWM
+*                                               +----+
+*/
 
 
 #ifndef MILLIS_H_
@@ -33,7 +34,7 @@ inline void SetTimerDelay(uint16_t intervalValue)
 {
     cli();
 
-    delayInterval = intervalValue;
+    delayInterval = intervalValue / 32; // 32 миллисекунды
 
     sei();
 }

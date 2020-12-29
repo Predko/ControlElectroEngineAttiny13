@@ -10,7 +10,7 @@
 *                              AinX (D X) PB5  1|    |8  Vcc
 *      Power supply relay      AinX (D X) PB3  2|    |7  PB2 (D X) AinX - Current sensor pin
 *      Start relay             AinX (D X) PB4  3|    |6  PB1 (D X) PWM	- Tone port
-*                                         GND  4|    |5  PB0 (D X) PWM	- millis timer
+*                                         GND  4|    |5  PB0 (D X) PWM
 *                                               +----+
 */
 
@@ -19,48 +19,45 @@
 #include <avr/io.h>
 
 #include "millis.h"
-#include <avr/interrupt.h>
+#include <avr/wdt.h>
 
 volatile  uint16_t  delayInterval;
 
-int8_t fiveTickCounter = 4;
-
-ISR(TIM0_OVF_vect)
+ISR(WDT_vect)
 {
-	if (--fiveTickCounter < 0)
+	// Отсчёт интервала в 32 миллисекунд
+	// Завершение -> delayInterval = 0; 
+	if (delayInterval)
 	{
-		// every 256 * 5 clock cycles, for F_CPU = 1200000 Hz => 0.001 sec.
-
-		fiveTickCounter = 4;
-
-		// Отсчёт интервала в 65535 миллисекунд
-		// Завершение -> delayInterval = 0; 
-		if (delayInterval)
-		{
-			delayInterval--;
-		}
+		delayInterval--;
 	}
+
+	WDTCR |= (1<<WDTIE); // разрешаем прерывания по ватчдогу. Иначе будет резет.
 }
 
 
 void Timer_Init()
 {
-	//Setup timer interrupt
-	TCCR0B |= _BV(CS00);
-	TCCR0A |= _BV(WGM00)|_BV(WGM01);
-	TIMSK0 |= 2;
-	TCNT0=0; 
-
-	delayInterval = 0;
+	cli();
 	
-	fiveTickCounter = 4;
+	wdt_reset();
+
+    /* Start timed sequence */
+	WDTCR |= (1<<WDCE) | (1<<WDE);
+	
+	/* Set new prescaler(time-out) value = 4K cycles (~32 ms) */
+	WDTCR = (1<<WDE) | (1<<WDP0) | (1 << WDTIE);
+	
+	delayInterval = 0;
 	
 	sei();
 }
 
+// Задержка на заданное количество миллисекунд(примерно)
+// Реальная задержка примерно равна (int)(intervalValue / 32) * 32 (обычно меньше)
 void delayUpTo1sec(uint16_t intervalValue)
 {
-	SetTimerDelay(intervalValue);
+	SetTimerDelay(intervalValue / 32);
 
 	while (!IsTimerEnded());
 }
