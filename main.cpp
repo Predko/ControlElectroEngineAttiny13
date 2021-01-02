@@ -18,10 +18,11 @@
 
 #include "main.h"
 #include <avr/io.h>
+#include <util/delay.h>
 
 #include "ModifiedMovingAverage.h"
 #include "AnalogIO_1_2Mhz.h"
-#include "millis.h"
+#include "wddelay.h"
 #include "soundsignals.h"
 
 #define START_RELAY _BV(PB4)
@@ -54,8 +55,6 @@ int main(void)
 
 void Setup()
 {
-	Timer_Init();
-	
 	pins_init();
 
 	PORTB |= START_RELAY;
@@ -67,6 +66,8 @@ void Setup()
 	
 	// Ready signal for 500 ms
 	ReadySound(500);
+
+	Wdt_Timer_Enable_32ms();
 }
 
 void Loop()
@@ -87,11 +88,11 @@ void Loop()
 				{
 					AlarmSound(2);
 
-					delayUpTo1sec(2000);
+					_delay_ms(1000);
 
 					AlarmSound(2);
 
-					delayUpTo1sec(2000);
+					_delay_ms(1000);
 
 					AlarmSound(2);
 				}
@@ -100,15 +101,15 @@ void Loop()
 			}
 		}
 	
-		delayUpTo1sec(1000);
+		_delay_ms(1000);
 	}
 }
 
 bool StartEngine(int startDuration)
 {
-	PORTB &= ~START_RELAY; // LOW
+uint16_t startTime = Wdt_GetCurrentMsCount();
 
-	SetTimerDelay(startDuration);
+	PORTB &= ~START_RELAY; // LOW
 
 	do
 	{
@@ -121,7 +122,7 @@ bool StartEngine(int startDuration)
 			return true;
 		}
 	}
-	while(!IsTimerEnded());
+	while(!Wdt_IsTimerEnded(startTime, startDuration));
 	
 	PORTB |= START_RELAY; // HIGH
 
@@ -130,12 +131,12 @@ bool StartEngine(int startDuration)
 
 int getMaxCurrentSensorValue()
 {
-	int sensorValue;             // value read from the sensor
-	int sensorMax = 0;
-	
-	SetTimerDelay(measurementTime);
+int16_t sensorValue;             // value read from the sensor
+int16_t sensorMax = 0;
 
-	while(!IsTimerEnded())
+uint16_t startTime = Wdt_GetCurrentMsCount();
+
+	while(!Wdt_IsTimerEnded(startTime, measurementTime))
 	{
 		sensorValue = MMA_CalcNew(adc_read());
 		

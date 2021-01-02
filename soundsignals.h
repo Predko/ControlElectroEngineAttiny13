@@ -13,6 +13,6 @@
 
 void AlarmSound(uint8_t numberOfSignals);
 
-void ReadySound(uint16_t duration);
+void ReadySound();
 
 #endif

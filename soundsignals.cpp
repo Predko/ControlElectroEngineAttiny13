@@ -1,7 +1,7 @@
 #include "soundsignals.h"
 #include "tone.h"
 #include "main.h"
-#include "millis.h"
+#include <util/delay.h>
 
 /*
 * The sound function.
@@ -36,13 +36,13 @@ void AlarmSound(uint8_t numberOfSignals)
     for (int j = 0; j < NumberOfIntervals; j++)
     {
       Tone(LowSound - j * IntervalLength);
-      delayUpTo1sec(IntervalDuration);
+      _delay_ms(IntervalDuration);
     }
 
     for (int j = 0; j < NumberOfIntervals; j++)
     {
       Tone(HighSound + j * IntervalLength);
-      delayUpTo1sec(IntervalDuration);
+      _delay_ms(IntervalDuration);
     }
   }
 
@@ -50,11 +50,11 @@ void AlarmSound(uint8_t numberOfSignals)
 }
 
 
-void ReadySound(uint16_t duration)
+void ReadySound()
 {
   Tone(HighSound);
 
-  delayUpTo1sec(duration);
+  _delay_ms(ReadySoundDuration);
 
   NoTone(); // Выключаем звук
 }
