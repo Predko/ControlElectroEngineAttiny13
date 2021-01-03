@@ -26,7 +26,7 @@ BUILDDIR = build/
 MCU = attiny13
 
 CFLAGS = \
--v -x c -D__ATtiny13A__ -DDEBUG -Os -g2 -Wall -std=c++14 -mmcu=attiny13 \
+-v -x c -D__ATtiny13A__ -DDEBUG -Os -g2 -Wall -std=gnu11 -std=gnu++14 -mmcu=attiny13 \
 -funsigned-char -funsigned-bitfields  \
 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums 
 
@@ -56,7 +56,7 @@ tone.o
 main.hex: main.o wddelay.o AnalogIO_1_2Mhz.o ModifiedMovingAverage.o soundsignals.o tone.o
 	@echo Building target: $@
 	@echo Invoking:  avr-gcc C Linker
-	$(CC) -o$(TARGET).elf $(OBJECTS) $(USER_OBJS) $(LIBS) -Wl,-Map=$(TARGET).map -Wl,--start-group -Wl,-lm  \
+	$(CC) -o$(TARGET).elf $(OBJECTS) $(LIBS) -Wl,-Map=$(TARGET).map -Wl,--start-group -Wl,-lm  \
 -Wl,--end-group -Wl,--gc-sections -mmcu=attiny13
 
 	@echo Finished building target: $@

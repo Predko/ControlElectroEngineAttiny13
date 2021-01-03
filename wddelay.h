@@ -21,19 +21,17 @@
 #include <avr/interrupt.h>
 
 
-extern const uint8_t numberOfCyclesPerSecond;
-
 // Max interval - 255 * 32ms = 8160 ms
 extern volatile  uint16_t  msCounter;
 
 inline int16_t Wdt_GetCurrentMsCount()
 {
-    return msCounter;
+    return msCounter * 32;
 }
 
 inline int8_t Wdt_IsTimerEnded(uint16_t startMsCount, uint16_t timeInterval)
 {
-    return ((msCounter - startMsCount) >= timeInterval);
+    return (((msCounter * 32) - startMsCount) >= timeInterval);
 }
 
 inline void Wdt_SettingInterrupt(uint8_t flagsAndTimeout)

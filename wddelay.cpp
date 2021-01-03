@@ -23,16 +23,9 @@
 // 
 volatile uint16_t  msCounter;
 
-uint8_t cycleCounter = NumberOfCyclesPerSecond;	// for 32 ms interval - 32 * 31 = 992 ms/
-
 ISR(WDT_vect)
 {
-	if (--cycleCounter == 0)
-	{
-		msCounter++;	// One sec = 31 * 32ms
-
-		cycleCounter = NumberOfCyclesPerSecond;
-	}
+    msCounter++;	// 32ms
 }
 
 void Wdt_InterruptInit(uint8_t flagsAndTimeout)

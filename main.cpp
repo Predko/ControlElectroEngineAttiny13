@@ -72,7 +72,7 @@ void Setup()
 
 void Loop()
 {
-	while (1)
+	do
 	{
 		int sensorValue = getMaxCurrentSensorValue();
 
@@ -103,6 +103,7 @@ void Loop()
 	
 		_delay_ms(1000);
 	}
+	while(1);
 }
 
 bool StartEngine(int startDuration)
