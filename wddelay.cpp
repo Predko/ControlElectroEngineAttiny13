@@ -21,13 +21,14 @@
 #define NumberOfCyclesPerSecond  31
 
 // 
-volatile uint16_t  msCounter;
+volatile uint8_t  msCounter;
 
 ISR(WDT_vect)
 {
-    msCounter++;	// 32ms
+    msCounter++;	
 }
 
+// Инициализирует таймер watchdog указанными в флаге параметрами
 void Wdt_InterruptInit(uint8_t flagsAndTimeout)
 {
     wdt_reset();
@@ -36,9 +37,15 @@ void Wdt_InterruptInit(uint8_t flagsAndTimeout)
 
     cli();
 
-    Wdt_SettingInterrupt(flagsAndTimeout);
+    // Start timed sequence. Got four cycles to set the new values from here
+    WDTCR |= (1 << WDCE) | (1 << WDE);
+    
+    // Set new prescaler(time-out) value
+    WDTCR = flagsAndTimeout;	// 
 
     SREG = sregs;
+
+    msCounter = 0;
 
     sei();
 }

@@ -12,11 +12,13 @@
 #ifndef Tone_h
 #define Tone_h
 
+void ToneInit();
+
 void Tone(uint8_t Tonefrequency);
 
 inline void NoTone()
 {
-	TCCR0B = 0;// выкл. таймер
+	TCCR0B &= ~((1<<CS02)|(1<<CS01)|(1<<CS00)); // stop the timer	
 }
 
 #endif

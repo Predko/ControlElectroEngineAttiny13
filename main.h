@@ -24,7 +24,7 @@
 // 1.2 MHz (default) built in resonator
 #define F_CPU 1200000UL
 
-#define ReadySoundDuration 500
+#define ReadySoundDuration 3000
 
 #include <avr/io.h>
 #include <stdbool.h>

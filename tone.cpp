@@ -17,24 +17,33 @@
 
 #include "tone.h"
 
+#define SPEAKER PB1
+#define SPEAKER_PORT (1 << SPEAKER)
+
+void ToneInit()
+{
+	cli();
+	
+	DDRB |= SPEAKER_PORT;	// Configuring PortB1 to Output
+	PORTB &= ~SPEAKER_PORT;
+	
+	// режим CTC
+	// максимальная частота таймера 150000Гц при F_CPU = 1200000
+
+	TCCR0A |= (1 << WGM01); // set timer mode to CTC
+	TCCR0A |= (1 << COM0B0); // connect PWM pin to Channel B of Timer0
+
+	sei();
+}
 
 
 void Tone(uint8_t Tonefrequency)
 {
-	cli();
+	// Частота звука = 1200000 / (2 * (8) * (1 + коэффициент) = 150000 / (1 + коэффициент)
+	// коэффициент = 150000 / (частота) - 1, для частот в районе 1000+ = 9375 / (частота)
+
+	TCCR0B |= (0 << CS02) | (1 << CS01) | (0 << CS00);
+	OCR0A = Tonefrequency; // set the OCRnx
 	
-	DDRB |= (1 << PORTB1);	// Configuring PortB1 to Output
-	
-	// режим CTC
-	// максимальная частота таймера 9375Гц при F_CPU = 1200000
-	TCCR0A = (1<<COM0A0) | (1<<WGM01); 	// дергаем ногой по совпадению
-	TCCR0B = (1<<CS01) | (1 << CS00); 	// делитель на 64
-
-	sei();
-
-	// Частота звука = 1200000 / (2 * (делитель) * (1 + коэффициент) = 9375 / (1 + коэффициент)
-	// коэффициент = 9375 / (частота) - 1, для частот в районе 1000+ = 9375 / (частота)
-
-	OCR0A = Tonefrequency; // загружаем коэффициент для заданной частоты
 }
 

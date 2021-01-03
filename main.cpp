@@ -24,6 +24,7 @@
 #include "AnalogIO_1_2Mhz.h"
 #include "wddelay.h"
 #include "soundsignals.h"
+#include "tone.h"
 
 #define START_RELAY _BV(PB4)
 #define ALARM_RELAY _BV(PB3)
@@ -64,6 +65,8 @@ void Setup()
 	
 	MMA_SetFirstValue(sensorValue);
 	
+	ToneInit();
+
 	// Ready signal for 500 ms
 	ReadySound(500);
 

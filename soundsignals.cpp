@@ -22,26 +22,26 @@
 
 /* 
 #define  NumberOfIntervals 8
-#define  LowSound  9            // (9375 / 1000)
-#define  HighSound 1            // (9375 / 9000)
+#define  LowSound  128            // (150000 / 1000)
+#define  HighSound 16            // (150000 / 9000)
 
-#define  IntervalDuration 100   // ms
-#define  IntervalLength   1     // (uint16_t)((HighSound - LowSound) / NumberOfIntervals)
+#define  IntervalDuration 10   // ms
+#define  IntervalLength   16    // (uint16_t)((HighSound - LowSound) / NumberOfIntervals)
 */
 
 void AlarmSound(uint8_t numberOfSignals)
 {
   for (int i = 0; i < numberOfSignals; i++)
   {
-    for (int j = 0; j < NumberOfIntervals; j++)
+    for (int j = LowSound; j > HighSound; j--)
     {
-      Tone(LowSound - j * IntervalLength);
+      Tone(j);
       _delay_ms(IntervalDuration);
     }
 
-    for (int j = 0; j < NumberOfIntervals; j++)
+    for (int j = HighSound; j < LowSound; j++)
     {
-      Tone(HighSound + j * IntervalLength);
+      Tone(j);
       _delay_ms(IntervalDuration);
     }
   }
@@ -52,9 +52,11 @@ void AlarmSound(uint8_t numberOfSignals)
 
 void ReadySound()
 {
+  ToneInit();
+  
   Tone(HighSound);
 
-  _delay_ms(ReadySoundDuration);
+  _delay_ms(1000);  // ReadySoundDuration
 
   NoTone(); // Выключаем звук
 }
