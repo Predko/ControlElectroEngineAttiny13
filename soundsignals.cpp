@@ -31,6 +31,8 @@
 
 void AlarmSound(uint8_t numberOfSignals)
 {
+  ToneInit();
+
   for (int i = 0; i < numberOfSignals; i++)
   {
     for (int j = LowSound; j > HighSound; j--)
@@ -53,7 +55,7 @@ void AlarmSound(uint8_t numberOfSignals)
 void ReadySound()
 {
   ToneInit();
-  
+
   Tone(HighSound);
 
   _delay_ms(1000);  // ReadySoundDuration

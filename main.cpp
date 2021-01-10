@@ -19,6 +19,7 @@
 #include "main.h"
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/eeprom.h>
 
 #include "ModifiedMovingAverage.h"
 #include "AnalogIO_1_2Mhz.h"
@@ -26,11 +27,11 @@
 #include "soundsignals.h"
 #include "tone.h"
 
-#define START_RELAY _BV(PB4)
-#define ALARM_RELAY _BV(PB3)
+const uint8_t START_RELAY = _BV(PB4);	// Включение - низкий уровень (0), выключение - высокий (1)
+const uint8_t  SUPPLY_RELAY = _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
 
 // Время измерения в мс
-#define measurementTime 100
+const uint8_t  measurementTime = 100;
 
 // 66 mV / 1 A   - 30 A sensor
 // 100 mV / 1 A  - 20 A sensor
@@ -39,72 +40,112 @@
 // 30A sensor
 #define K_Current 66L
 
-#define operatingCurrent 8  // (Ampere)
+#define operatingCurrent 4  // (Ampere)
 
-#define K0 (int)((K_Current * 1024 * 1.414) / 5000.0)
+#define KStartCurrent 1.5	// Коэффициент превышения тока для начала процедуры запуска.
 
-#define startSensorValue (int)((512.0 + (operatingCurrent + operatingCurrent / 2) * K0))
+// (K_Current * 1024 * 1.414 * KStartCurrent) / 5000.0)
+#define K0 (int)((K_Current * 1024 * 1.414 * KStartCurrent) / 5000.0)
 
-#define maxStartTime 6000	// milliseconds
+const uint16_t *startSensorValueEepromPtr = 0;
+// Значение сенсора тока, выше которого начинается процедура запуска двигателя.
+uint16_t startSensorValue = (int)(512.0 + operatingCurrent * K0);
+
+const uint16_t *maxStartTimeEepromPtr = 2;
+// Максимальное время старта (миллисекунд))
+uint16_t maxStartTime = 4000;
+
+const uint16_t *MaximumStartAttemptsEepromPtr = 4;
+// Максимальное количество неудачных попыток запуска.
+uint8_t MaximumStartAttempts = 3;
 
 int main(void)
 {
+	LoadInitialValuesFromEeprom();
+
 	Setup();
 	
 	Loop();
+}
+
+void LoadInitialValuesFromEeprom()
+{
+	startSensorValue = eeprom_read_word(startSensorValueEepromPtr);
+
+	maxStartTime = eeprom_read_word(maxStartTimeEepromPtr);
+
+	MaximumStartAttempts = eeprom_read_word(MaximumStartAttemptsEepromPtr);
 }
 
 void Setup()
 {
 	pins_init();
 
-	PORTB |= START_RELAY;
-	PORTB |= ALARM_RELAY;
-
-	int sensorValue = getMaxCurrentSensorValue();
+	Adc_Setup();
+	
+	PORTB |= START_RELAY;	// Выключаем
+	PORTB &= ~SUPPLY_RELAY; // Питание включаем
+	
+	Wdt_Timer_Enable_32ms();
+	
+	uint16_t sensorValue = getMaxCurrentSensorValue();
 	
 	MMA_SetFirstValue(sensorValue);
 	
-	ToneInit();
-
 	// Ready signal for 500 ms
 	ReadySound(500);
-
-	Wdt_Timer_Enable_32ms();
 }
 
 void Loop()
 {
+uint8_t startAttemptsCounter = 0;
+
+	PORTB &= ~(1 << PB0);
+	
 	do
 	{
-		int sensorValue = getMaxCurrentSensorValue();
+		uint16_t sensorValue = getMaxCurrentSensorValue();
 
-		if ( sensorValue > startSensorValue)
+		if ( sensorValue > startSensorValue )
 		{
 			AlarmSound(1);
 
-			if (StartEngine(maxStartTime) == false)
+			if (StartEngine (maxStartTime) == false)
 			{
+				startAttemptsCounter++;
 
-				PORTB &= ~ALARM_RELAY; // LOW
+				// Неудалось запустить двигатель, подаём сигнал и выключаем питание на 10 секунд. 
+				PORTB |= SUPPLY_RELAY;
 
 				{
-					AlarmSound(2);
+					AlarmSound (2);
 
-					_delay_ms(1000);
+					_delay_ms (1000);
 
-					AlarmSound(2);
+					AlarmSound (2);
 
-					_delay_ms(1000);
+					_delay_ms (1000);
 
-					AlarmSound(2);
+					AlarmSound (2);
+
+					_delay_ms (8000);
 				}
 
-				PORTB |= ALARM_RELAY; // HIGH
+				if (startAttemptsCounter >= MaximumStartAttempts)
+				{
+					// Блокируем дальнейшую работу, до рестарта системы пуска.
+					while(1);
+				}
+				
+				// Включаем питание.
+				PORTB &= ~SUPPLY_RELAY;
 			}
+			else
+			{
+				startAttemptsCounter = 0;
+			}
+			
 		}
-	
-		_delay_ms(1000);
 	}
 	while(1);
 }
@@ -113,36 +154,41 @@ bool StartEngine(int startDuration)
 {
 uint16_t startTime = Wdt_GetCurrentMsCount();
 
-	PORTB &= ~START_RELAY; // LOW
+	// Подключаем пусковой конденсатор.
+	PORTB &= ~START_RELAY;
 
 	do
 	{
-		int sensorValue = getMaxCurrentSensorValue();
+		uint16_t sensorValue = getMaxCurrentSensorValue();
 
 		if ( sensorValue < startSensorValue)
 		{
-			PORTB |= START_RELAY; // HIGH
-
+			// Отключаем пусковой конденсатор.
+			PORTB |= START_RELAY;
+			
+			// Двигатель запущен.
 			return true;
 		}
 	}
 	while(!Wdt_IsTimerEnded(startTime, startDuration));
 	
-	PORTB |= START_RELAY; // HIGH
+	// Отключаем пусковой конденсатор.
+	PORTB |= START_RELAY;
 
+	// Неудачный старт.
 	return false;
 }
 
-int getMaxCurrentSensorValue()
+uint16_t getMaxCurrentSensorValue()
 {
 int16_t sensorValue;             // value read from the sensor
 int16_t sensorMax = 0;
 
-uint16_t startTime = Wdt_GetCurrentMsCount();
+	uint8_t startTime = Wdt_GetCurrentMsCount();
 
 	while(!Wdt_IsTimerEnded(startTime, measurementTime))
 	{
-		sensorValue = MMA_CalcNew(adc_read());
+		sensorValue = MMA_CalcNew(Adc_Read());
 		
 		if (sensorValue > sensorMax)
 		{
@@ -150,15 +196,13 @@ uint16_t startTime = Wdt_GetCurrentMsCount();
 			sensorMax = sensorValue;
 		}
 	}
-	
+
 	return sensorMax;
 }
 
 void pins_init()
 {
-	adc_setup();
-	
 	// Output mode
 	DDRB |= START_RELAY;
-	DDRB |= ALARM_RELAY;
+	DDRB |= SUPPLY_RELAY;
 }

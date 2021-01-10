@@ -20,13 +20,10 @@
 #ifndef ANALOGIO_1_2MHZ_H
 #define ANALOGIO_1_2MHZ_H
 
-// Analog input pin that current sensor is attached to PB2
-#define PortB2_10Bit (1 << MUX0) | (1 << ADLAR)
-	
-#define EnableConversion150Khz (1 << ADPS1) | (1 << ADPS0) | (1 << ADEN)
+void Adc_Setup (void);
+uint16_t Adc_Read (void);
 
-void adc_setup (void);
-
-int adc_read (void);
+void Pwm_Setup(uint8_t pinBit);
+void Pwm_Write(uint8_t value);
 
 #endif /* ANALOGIO_1_2MHZ_H_ */

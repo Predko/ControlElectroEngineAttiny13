@@ -1,9 +1,13 @@
 #include "ModifiedMovingAverage.h"
 #include <avr/io.h>
 
-uint8_t MMA_CalcNew(uint8_t newValue)
+// Последннее значение.
+uint16_t lastValue;
+
+uint16_t MMA_CalcNew(uint16_t newValue)
 {
-  // lastValue =  (newValue + lastValue * (8 - 1)) / 8;  8 - Measurement interval
+  // SMOOTHING_INTERVAL = 8
+  // lastValue =  newValue + (lastValue * (SMOOTHING_INTERVAL - 1)) / SMOOTHING_INTERVAL;
   
   lastValue =  (newValue + ((lastValue << 3) - lastValue)) >> 3;
 

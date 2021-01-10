@@ -9,7 +9,7 @@
 #           --makefile=../Makefile 
 #
 
-
+# d:\MyProgram\WinAvr\toolchain\avr8\avr8-gnu-toolchain/bin/avr-objdump -h -S isr_wdt_vect.o > isr_wdt_vect.lss
 
 SHELL := cmd.exe
 RM := del -f
@@ -17,8 +17,9 @@ RM := del -f
 PATH_TOOLCHAINE = d:\MyProgram\WinAvr\toolchain\avr8\avr8-gnu-toolchain
 
 CC = $(PATH_TOOLCHAINE)"/bin/avr-gcc.exe"
+AS = $(PATH_TOOLCHAINE)"/bin/avr-as.exe"
 LD = $(PATH_TOOLCHAINE)"/bin/avr-ld"
-OBJCOPY = $(PATH_TOOLCHAINE)"/bin/avr-objcopy"
+OBJCOPY = $(PATH_TOOLCHAINE)/"bin/avr-objcopy"
 OBJDUMP = $(PATH_TOOLCHAINE)"/bin/avr-objdump"
 SIZE = $(PATH_TOOLCHAINE)"/bin/avr-size"
 BUILDDIR = build/
@@ -43,14 +44,14 @@ wddelay.cpp \
 AnalogIO_1_2Mhz.cpp \
 ModifiedMovingAverage.cpp \
 soundsignals.cpp \
-tone.cpp
+tone.cpp 
 
 OBJECTS =  main.o \
 wddelay.o \
 AnalogIO_1_2Mhz.o \
 ModifiedMovingAverage.o \
 soundsignals.o \
-tone.o
+tone.o 
 
 
 main.hex: main.o wddelay.o AnalogIO_1_2Mhz.o ModifiedMovingAverage.o soundsignals.o tone.o
@@ -108,8 +109,7 @@ tone.o: tone.cpp
 	@echo Invoking: avr-gcc C Compiler 
 	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
 	@echo Finished building: $<
-	
-	
+
 
 # Other Targets
 clean:

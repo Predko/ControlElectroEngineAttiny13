@@ -29,23 +29,18 @@
 #include <avr/io.h>
 #include <stdbool.h>
 
+extern uint16_t *eep;
 
-int getMaxCurrentSensorValue();
+uint16_t getMaxCurrentSensorValue();
 
 bool StartEngine(int startDuration);
 
-int getMaxCurrentSensorValue();
-
 void pins_init();
-
-void adc1_InputSetup (void);
-
-int CurrentSensorRead (void);
 
 void Loop();
 
 void Setup();
 
-
+void LoadInitialValuesFromEeprom();
 
 #endif /* MAIN_H_ */

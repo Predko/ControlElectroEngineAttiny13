@@ -25,15 +25,15 @@
 extern volatile  uint8_t  msCounter;
 
 // Возвращает значение счётчика
-inline int16_t Wdt_GetCurrentMsCount()
+inline int8_t Wdt_GetCurrentMsCount()
 {
     return msCounter;
 }
 
 // Проверяет, не завершился ли указанный интервал
-inline int8_t Wdt_IsTimerEnded(uint8_t startMsCount, uint16_t timeInterval)
+inline uint8_t Wdt_IsTimerEnded(uint8_t startMsCount, uint16_t timeInterval)
 {
-    return ((msCounter - startMsCount) < timeInterval / 32);
+    return ((msCounter - startMsCount) >= timeInterval / 32);
 }
 
 // Инициализирует таймер watchdog указанными в флаге параметрами
