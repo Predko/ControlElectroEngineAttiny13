@@ -27,7 +27,7 @@ BUILDDIR = build/
 MCU = attiny13
 
 CFLAGS = \
--v -x c -D__ATtiny13A__ -DDEBUG -Os -g2 -Wall -std=gnu11 -std=gnu++14 -mmcu=attiny13 \
+-v -x c -D__ATtiny13A__ -DDEBUG -Os -g2 -Wall -std=gnu11 -std=gnu++17 -mmcu=attiny13 \
 -funsigned-char -funsigned-bitfields  \
 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums 
 
@@ -42,19 +42,17 @@ TARGET = main
 SOURCES = main.cpp \
 wddelay.cpp \
 AnalogIO_1_2Mhz.cpp \
-ModifiedMovingAverage.cpp \
 soundsignals.cpp \
 tone.cpp 
 
 OBJECTS =  main.o \
 wddelay.o \
 AnalogIO_1_2Mhz.o \
-ModifiedMovingAverage.o \
 soundsignals.o \
 tone.o 
 
 
-main.hex: main.o wddelay.o AnalogIO_1_2Mhz.o ModifiedMovingAverage.o soundsignals.o tone.o
+main.hex: main.o wddelay.o AnalogIO_1_2Mhz.o soundsignals.o tone.o
 	@echo Building target: $@
 	@echo Invoking:  avr-gcc C Linker
 	$(CC) -o$(TARGET).elf $(OBJECTS) $(LIBS) -Wl,-Map=$(TARGET).map -Wl,--start-group -Wl,-lm  \
@@ -87,12 +85,6 @@ wddelay.o: wddelay.cpp
 	@echo Finished building: $<
 
 AnalogIO_1_2Mhz.o: AnalogIO_1_2Mhz.cpp
-	@echo Building file: $<
-	@echo Invoking: avr-gcc C Compiler 
-	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
-	@echo Finished building: $<
-	
-ModifiedMovingAverage.o: ModifiedMovingAverage.cpp
 	@echo Building file: $<
 	@echo Invoking: avr-gcc C Compiler 
 	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

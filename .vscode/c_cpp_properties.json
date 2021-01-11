@@ -16,7 +16,7 @@
             "windowsSdkVersion": "10.0.18362.0",
             "compilerPath": "d:/MyProgram/WinAvr/toolchain/avr8/avr8-gnu-toolchain/bin/avr-gcc.exe",
             "cStandard": "c11",
-            "cppStandard": "c++14",
+            "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x64"
         }
     ],

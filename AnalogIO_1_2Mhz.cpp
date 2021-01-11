@@ -1,20 +1,23 @@
-/*
- * AnalogIO_1_2Mhz.cpp
- * 
- * 1.2 MHz, built in resonator
- * PB2
- *
- * Created: 25.12.2020 13:17:20
- *  Author: Predko Victor
- */ 
+//
+// NO WARRANTEE OR GUARANTEES!
+// Written by Victor Predko 
+// You are free to use, redistribute and modify
+// 
+// 
+// 1.2 MHz, built in resonator
+// 
+//
+// Created: 25.12.2020 13:17:20
+//  Author: Predko Victor
+// 
 // ATMEL ATTINY13
 //                            
-//                                              +-\/-+
-//                             AinX (D X) PB5  1|    |8  Vcc
-//     Power supply relay      AinX (D X) PB3  2|    |7  PB2 (D X) AinX - Current sensor pin
-//     Start relay             AinX (D X) PB4  3|    |6  PB1 (D X) PWM	- Tone port
-//                                        GND  4|    |5  PB0 (D X) PWM
-//                                              +----+
+//                                              	 +-\/-+
+//	   					(PCINT5/RESET/ADC0/dW) PB5  1|    |8  Vcc
+//	Power supply relay -    (PCINT3/CLKI/ADC3) PB3  2|    |7  PB2 (SCK/ADC1/T0/PCINT2) 				- Current sensor pin
+//	Start relay        -    	 (PCINT4/ADC2) PB4  3|    |6  PB1 PWM (MISO/AIN1/OC0B/INT0/PCINT1) 	- Tone port
+//                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)
+//                                             		 +----+
 
 #include <avr/io.h>
 
@@ -26,22 +29,28 @@ void Adc_Setup (void)
 	// Set the ADC input to PB2/ADC1, left adjust result
 	ADMUX = (1 << MUX0) & ~(1 << REFS0);
 
-	// Set the prescaler to clock_CPU/8 = 150 kHz & enable ADC
-	ADCSRA = (1 << ADPS1) | (1 << ADPS0) | (1 << ADEN);
+	// Set the prescaler to clock_CPU/16 = 75 kHz & enable ADC
+	ADCSRA = (0 << ADPS2) | (1 << ADPS1) | (1 << ADPS0) | (1 << ADEN);
+
+	// Disable digital pin PB2
+	// DIDR0 |= (1 << ADC1D);
 }
 
 uint16_t Adc_Read (void)
 {
+	// Set the ADC input to PB2/ADC1, left adjust result
+	//ADMUX = (1 << MUX0) & ~(1 << REFS0);
+	
 	// Start the conversion
 	ADCSRA |= (1 << ADSC);
 
 	// Wait for it to finish
 	while (ADCSRA & (1 << ADSC));
 
-	uint8_t l = ADCL;
-	uint8_t h = ADCH;
+	uint8_t L = ADCL;
+	uint8_t H = ADCH;
 
-	return (h << 8) | l;
+	return (H << 8) | L;
 }
 
 
