@@ -24,7 +24,7 @@
 #define ANALOGIO_1_2MHZ_H
 
 void Adc_Setup (void);
-uint16_t Adc_Read (void);
+uint8_t Adc_Read (void);
 
 void Pwm_Setup(uint8_t pinBit);
 void Pwm_Write(uint8_t value);

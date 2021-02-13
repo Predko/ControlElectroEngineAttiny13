@@ -33,7 +33,7 @@ const uint8_t START_RELAY = _BV(PB4);	// Включение - низкий ур�
 const uint8_t  SUPPLY_RELAY = _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
 
 // Время измерения в мс
-const uint8_t  measurementTime = 32;
+const uint8_t  measurementTime = 70;
 
 // 66 mV / 1 A   - 30 A sensor
 // 100 mV / 1 A  - 20 A sensor
@@ -49,27 +49,17 @@ const uint8_t  measurementTime = 32;
 // (K_Current * 1024 * 1.414 * KStartCurrent) / 5000.0)
 #define K0 (int)((K_Current * 1024 * 1.414 * KStartCurrent) / 5000.0)
 
-const uint16_t *startSensorValueEepromPtr = (uint16_t *)0;
+const uint8_t *startSensorValueEepromPtr = (uint8_t *)0;
 // Значение сенсора тока, выше которого начинается процедура запуска двигателя.
-uint16_t startSensorValue = (uint8_t)(512.0 + operatingCurrent * K0);
+uint8_t startSensorValue = (uint8_t)(512.0 + operatingCurrent * K0);
 
-inline uint8_t CalcCurrent(uint16_t sensorValue)
-{
-	return (sensorValue - 512) >> 1; // Значение тока умноженное на 9.56(примерно 10)
-}
-
-const uint16_t *maxStartTimeEepromPtr = (uint16_t *)2;
+const uint16_t *maxStartTimeEepromPtr = (uint16_t *)1;
 // Максимальное время старта (миллисекунд))
 uint16_t maxStartTime = 3000;
 
-const uint8_t *MaximumStartAttemptsEepromPtr = (uint8_t *)4;
+const uint8_t *MaximumStartAttemptsEepromPtr = (uint8_t *)3;
 // Максимальное количество неудачных попыток запуска.
 uint8_t MaximumStartAttempts = 3;
-
-#define SIZE_ARRAY_CURRENTS 40
-
-uint8_t CurrentValues[SIZE_ARRAY_CURRENTS];
-
 
 int main(void)
 {
@@ -77,91 +67,12 @@ int main(void)
 
 	Setup();
 
-	DDRB &= ~(1 << PB4);	// Output
-	PORTB |= (1 << PB4);	// PullUp
-
-	DDRB |= (1 << PB3);
-	PORTB |= (1 << PB3);
-
-	// при нажатой кнопке блокируется работа программы
-	while ((PINB & (1 << PB4)) == 0);
-
-	uint8_t currentValue;
-	uint8_t oldCurrentValue = CalcCurrent(getMaxCurrentSensorValue());
-
-	uint8_t i = SIZE_ARRAY_CURRENTS;
-	uint8_t *eepAdr = (uint8_t *)5;
-
-	eeprom_write_word((uint16_t *)55, 0x0000);
-
-	eeprom_write_byte(eepAdr++, oldCurrentValue);
-	eeprom_write_byte(eepAdr++, 0x00);
-
-	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount()); eepAdr += 2;
-
-	while (i)
-	{
-		// Exit when the button is pressed
-		if ((PINB & (1 << PB4)) == 0)
-		{
-			break;
-		}
-
-		currentValue = CalcCurrent(getMaxCurrentSensorValue());
-
-		// // Ожидаем подачи питания на двигатель
-		// if (i == 20 && currentValue < 530)
-		// {
-		// 	continue;
-		// }
-
-		uint8_t delta = currentValue - oldCurrentValue;
-
-		if (delta > 1)	// 0.5 a
-		{
-			CurrentValues[SIZE_ARRAY_CURRENTS - i] = currentValue;
-			
-			oldCurrentValue = currentValue;
-			i--;
-		}
-
-		// _delay_ms(500);
-	}
-
-	// Saving begins
-	PORTB &= ~(1 << PB3);
-
-	for (uint8_t k = 0; k != SIZE_ARRAY_CURRENTS; k++)
-	{
-		eeprom_write_byte(eepAdr++, CurrentValues[k]);	
-	}
-
-	eeprom_write_byte(eepAdr++, 0x00);
-
-	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount()); eepAdr += 2;
-
-	_delay_ms(2000);
-
-	eeprom_write_byte(eepAdr++, CalcCurrent(getMaxCurrentSensorValue()));
-	_delay_ms(500);
-	eeprom_write_byte(eepAdr++, CalcCurrent(getMaxCurrentSensorValue()));
-	_delay_ms(500);
-	eeprom_write_byte(eepAdr++, CalcCurrent(getMaxCurrentSensorValue()));
-
-
-	eeprom_write_word((uint16_t *)55, 0x1234);
-	// Save finished
-	PORTB |= (1 << PB3);
-
-	while(1);
-
-	
-	//Loop();
+	Loop();
 }
 
 void LoadInitialValuesFromEeprom()
 {
-	startSensorValue = eeprom_read_word(startSensorValueEepromPtr);
+	startSensorValue = eeprom_read_byte(startSensorValueEepromPtr);
 
 	maxStartTime = eeprom_read_word(maxStartTimeEepromPtr);
 
@@ -170,7 +81,7 @@ void LoadInitialValuesFromEeprom()
 
 void Setup()
 {
-	pins_init();
+	OutputPinsInit();
 
 	Adc_Setup();
 	
@@ -191,7 +102,7 @@ uint8_t startAttemptsCounter = 0;
 	
 	do
 	{
-		uint16_t sensorValue = getMaxCurrentSensorValue();
+		uint8_t sensorValue = getMaxCurrentSensorValue();
 
 		if ( sensorValue > startSensorValue )
 		{
@@ -246,7 +157,7 @@ uint16_t startTime = Wdt_GetCurrentMsCount();
 
 	do
 	{
-		uint16_t sensorValue = getMaxCurrentSensorValue();
+		uint8_t sensorValue = getMaxCurrentSensorValue();
 
 		if ( sensorValue < startSensorValue)
 		{
@@ -266,10 +177,10 @@ uint16_t startTime = Wdt_GetCurrentMsCount();
 	return false;
 }
 
-uint16_t getMaxCurrentSensorValue()
+uint8_t getMaxCurrentSensorValue()
 {
-int16_t sensorValue;             // value read from the sensor
-int16_t sensorMax = 0;
+int8_t sensorValue;             // value read from the sensor
+int8_t sensorMax = 0;
 
 	uint16_t startTime = Wdt_GetCurrentMsCount();
 
@@ -279,7 +190,6 @@ int16_t sensorMax = 0;
 		
 		if (sensorValue > sensorMax)
 		{
-			/*record the maximum sensor value*/
 			sensorMax = sensorValue;
 		}
 	}
@@ -287,7 +197,7 @@ int16_t sensorMax = 0;
 	return sensorMax;
 }
 
-void pins_init()
+void OutputPinsInit()
 {
 	// Output mode
 	DDRB |= START_RELAY;

@@ -25,9 +25,6 @@
 
 #include <avr/interrupt.h>
 
-const uint8_t WDT_PRESCALE = (0 << WDP3) | (0 << WDP2) | (0 << WDP1) | (1 << WDP0);	// 32 ms
-const uint8_t WDT_Time_out = 32;
-
 
 
 extern volatile  uint16_t  msCounter;
@@ -41,24 +38,22 @@ inline uint16_t Wdt_GetCurrentMsCount()
 // Проверяет, не завершился ли указанный интервал
 inline uint16_t Wdt_IsTimerEnded(uint16_t startMsCount, uint16_t timeInterval)
 {
-    return ((msCounter - startMsCount) >= timeInterval / WDT_Time_out);
+    return ((msCounter - startMsCount) >= timeInterval / 32);
 }
 
 // Инициализирует таймер watchdog указанными в флаге параметрами
 void Wdt_InterruptInit(uint8_t flagsAndTimeout);
 
-// Инициализация на прерывание через 32 мс.
+// Инициализация прерывания.
 inline void Wdt_Timer_Enable()
 {
-	// 32 ms
-
-	Wdt_InterruptInit((1 << WDTIE) | WDT_PRESCALE);
+	Wdt_InterruptInit((1 << WDTIE) | (0 << WDP3) | (0 << WDP2) | (0 << WDP1) | (1 << WDP0));
 }
 
 // Полное отключение watchdog.
 inline void Wdt_Timer_Disable()
 {
-	Wdt_InterruptInit((0 << WDTIE) | (0 << WDE) | WDT_PRESCALE);
+	Wdt_InterruptInit((0 << WDTIE) | (0 << WDE) | (0 << WDP3) | (0 << WDP2) | (0 << WDP1) | (1 << WDP0));
 }
 
 #endif /* WDDELAY_H_ */

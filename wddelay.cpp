@@ -23,10 +23,7 @@
 #include <avr/wdt.h>
 #include <avr/io.h>
 
-#define NumberOfCyclesPerSecond  31
-
-// 
-volatile uint8_t  msCounter;
+volatile uint16_t  msCounter;
 
 ISR(WDT_vect)
 {

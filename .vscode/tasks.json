@@ -22,6 +22,19 @@
 				"$gcc"
 			],
 			"group": "build"
+		},
+		{
+			"type": "shell",
+			"label": "Size",
+			"command": "d:/MyProgram/WinAvr/toolchain/avr8/avr8-gnu-toolchain/bin/avr-size",
+			"args": [
+				"-A",
+				"main.elf"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
 		}
 	]
 }

@@ -31,13 +31,11 @@
 #include <avr/io.h>
 #include <stdbool.h>
 
-extern uint16_t *eep;
-
-uint16_t getMaxCurrentSensorValue();
+uint8_t getMaxCurrentSensorValue();
 
 bool StartEngine(uint16_t startDuration);
 
-void pins_init();
+void OutputPinsInit();
 
 void Loop();
 
