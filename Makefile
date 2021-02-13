@@ -12,7 +12,7 @@
 # d:\MyProgram\WinAvr\toolchain\avr8\avr8-gnu-toolchain/bin/avr-objdump -h -S isr_wdt_vect.o > isr_wdt_vect.lss
 
 SHELL := cmd.exe
-RM := del -f
+RM := del /Q
 
 PATH_TOOLCHAINE = d:\MyProgram\WinAvr\toolchain\avr8\avr8-gnu-toolchain
 
@@ -22,7 +22,7 @@ LD = $(PATH_TOOLCHAINE)"/bin/avr-ld"
 OBJCOPY = $(PATH_TOOLCHAINE)/"bin/avr-objcopy"
 OBJDUMP = $(PATH_TOOLCHAINE)"/bin/avr-objdump"
 SIZE = $(PATH_TOOLCHAINE)"/bin/avr-size"
-BUILDDIR = build/
+BUILDDIR = build
 
 MCU = attiny13
 
@@ -35,7 +35,7 @@ CFLAGS = \
 LFLAGS = -v
 #-funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums 
 
-TARGET = main
+TARGET = $(BUILDDIR)/main
 
 
 # Add inputs and outputs from these tool invocations to the build variables 
@@ -45,14 +45,14 @@ AnalogIO_1_2Mhz.cpp \
 soundsignals.cpp \
 tone.cpp 
 
-OBJECTS =  main.o \
-wddelay.o \
-AnalogIO_1_2Mhz.o \
-soundsignals.o \
-tone.o 
+OBJECTS =  $(BUILDDIR)/main.o \
+$(BUILDDIR)/wddelay.o \
+$(BUILDDIR)/AnalogIO_1_2Mhz.o \
+$(BUILDDIR)/soundsignals.o \
+$(BUILDDIR)/tone.o 
 
 
-main.hex: main.o wddelay.o AnalogIO_1_2Mhz.o soundsignals.o tone.o
+$(BUILDDIR)/main.hex: $(OBJECTS)
 	@echo Building target: $@
 	@echo Invoking:  avr-gcc C Linker
 	$(CC) -o$(TARGET).elf $(OBJECTS) $(LIBS) -Wl,-Map=$(TARGET).map -Wl,--start-group -Wl,-lm  \
@@ -72,42 +72,15 @@ main.hex: main.o wddelay.o AnalogIO_1_2Mhz.o soundsignals.o tone.o
 
 
 # AVR/GNU C Compiler
-main.o: main.cpp
+$(BUILDDIR)/%.o: %.cpp
 	@echo Building file: $<
 	@echo Invoking: avr-gcc C Compiler 
 	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
 	@echo Finished building: $<
-
-wddelay.o: wddelay.cpp
-	@echo Building file: $<
-	@echo Invoking: avr-gcc C Compiler 
-	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
-	@echo Finished building: $<
-
-AnalogIO_1_2Mhz.o: AnalogIO_1_2Mhz.cpp
-	@echo Building file: $<
-	@echo Invoking: avr-gcc C Compiler 
-	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
-	@echo Finished building: $<
-	
-soundsignals.o: soundsignals.cpp
-	@echo Building file: $<
-	@echo Invoking: avr-gcc C Compiler 
-	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
-	@echo Finished building: $<
-
-tone.o: tone.cpp
-	@echo Building file: $<
-	@echo Invoking: avr-gcc C Compiler 
-	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
-	@echo Finished building: $<
-
 
 # Other Targets
 clean:
-	$(RM) $(OBJECTS) $(EXECUTABLES) *.d 
-
-	del -rf "main.elf" "main.hex" "main.eep" "main.map" "main.usersignatures" "main.a"  "main.lss"
+	${RM} ${BUILDDIR}
 
 
 #$(SOURCES:.c=.o)
