@@ -27,7 +27,7 @@ BUILDDIR = build
 MCU = attiny13
 
 CFLAGS = \
--v -x c -D__ATtiny13A__ -DDEBUG -Os -g2 -Wall -std=gnu11 -std=gnu++14 -mmcu=attiny13 \
+-v -x c -D__ATtiny13A__ -DDEBUG -Os -g2 -Wall -std=gnu11 -std=gnu++17 -mmcu=attiny13 \
 -funsigned-char -funsigned-bitfields  \
 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums 
 

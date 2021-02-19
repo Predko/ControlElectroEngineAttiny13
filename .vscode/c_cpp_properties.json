@@ -5,7 +5,6 @@
             "includePath": [
                 "${default}",
                 "${workspaceFolder}",
-                //"d:/MyProgram/WinAvr/avr/avr/include"
                 "d:/MyProgram/WinAvr/toolchain/avr8/avr8-gnu-toolchain/include"
             ],
             "defines": [
@@ -15,7 +14,6 @@
                 "__AVR_ATtiny13A__"
             ],
             "windowsSdkVersion": "10.0.18362.0",
-            //"compilerPath": "d:/MyProgram/WinAvr/avr/bin/avr-gcc.exe",
             "compilerPath": "d:/MyProgram/WinAvr/toolchain/avr8/avr8-gnu-toolchain/bin/avr-gcc.exe",
             "cStandard": "c11",
             "cppStandard": "c++14",
