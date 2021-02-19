@@ -13,6 +13,16 @@
 		},
 		{
 			"type": "shell",
+			"label": "Build Test_Current project",
+			"command": "Test_Current.bat",
+			"args": [],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"type": "shell",
 			"label": "Make clean",
 			"command": "make",
 			"args": [

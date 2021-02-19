@@ -19,6 +19,9 @@
 //                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)
 //                                             		 +----+
 
+// Программа проверки работы системы считывания датчика тока.
+// Так же сохраняет в EEPROM значения тока, потребляемого двигателем в момент запуска.
+
 #include "main.h"
 #include <avr/io.h>
 #include <util/delay.h>
@@ -29,11 +32,12 @@
 #include "soundsignals.h"
 #include "tone.h"
 
+
 const uint8_t START_RELAY = _BV(PB4);	// Включение - низкий уровень (0), выключение - высокий (1)
 const uint8_t SUPPLY_RELAY = _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
 
-// Время измерения в 32-х миллисекундных интервалах.
-const uint8_t  measurementTime = 64 / 32;
+// Время измерения в 32 мсекундных интервалах (примерно три полных цикла тока сети 50Гц)
+const uint16_t  measurementTime = 64 / 32;
 
 // 66 mV / 1 A   - 30 A sensor
 // 100 mV / 1 A  - 20 A sensor
@@ -47,16 +51,15 @@ const uint8_t  measurementTime = 64 / 32;
 #define KStartCurrent 1.5	// Коэффициент превышения тока для начала процедуры запуска.
 
 // (K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)
-#define K0 ((K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)
+#define K0 (float)((K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)	// для 66l = 7.167
 
 const uint8_t *startSensorValueEepromPtr = (uint8_t *)0;
 // Значение сенсора тока, выше которого начинается процедура запуска двигателя.
-uint8_t startSensorValue = (uint8_t)(128.0 + operatingCurrent * K0);
+#define startSensorValue (uint8_t)(128.0 + (operatingCurrent * K0))	// 228
 
 const uint16_t *maxStartTimeEepromPtr = (uint16_t *)1;
 
-// Максимальное время старта в 32-х миллисекундных интервалах.
-
+// Максимальное время старта (миллисекунд))
 uint16_t maxStartTime = 3200 / 32;
 
 const uint8_t *MaximumStartAttemptsEepromPtr = (uint8_t *)3;
@@ -65,119 +68,96 @@ uint8_t MaximumStartAttempts = 3;
 
 int main(void)
 {
-	//LoadInitialValuesFromEeprom();
-
 	Setup();
 
+	ReadySound(500);
+
+	_delay_ms(5000);
+
 	Loop();
-}
-
-// Чтение предопределённых данных из EEPROM:
-// - стартовое значение сенсора тока,
-// - максимальное время старта,
-// - максимальное количество попыток старта.
-void LoadInitialValuesFromEeprom()
-{
-	startSensorValue = eeprom_read_byte(startSensorValueEepromPtr);
-
-	maxStartTime = eeprom_read_word(maxStartTimeEepromPtr);
-
-	MaximumStartAttempts = eeprom_read_byte(MaximumStartAttemptsEepromPtr);
 }
 
 void Setup()
 {
 	OutputPinsInit();
-	
-	CapacitorOff();	// Выключаем пусковой конденсатор.
-	PowerOff(); // Питание выключаем
 
 	Adc_Setup();
 	
 	Wdt_Timer_Enable();
-	
-	// Ready signal for 500 ms
-	ReadySound(500);
 }
+
+const uint16_t testDuration = 224 / 32;
 
 void Loop()
 {
-uint8_t startAttemptsCounter = 0;
-
-	do
-	{
-		uint8_t sensorValue = getMaxCurrentSensorValue();
-
-		if ( sensorValue > startSensorValue )
-		{
-			if (StartEngine (maxStartTime) == false)
-			{
-				startAttemptsCounter++;
-
-				// Неудалось запустить двигатель, подаём сигнал и выключаем питание на 10 секунд. 
-				{
-					AlarmSound (2);
-
-					_delay_ms (1000);
-
-					AlarmSound (2);
-
-					_delay_ms (1000);
-
-					AlarmSound (2);
-
-					_delay_ms (8000);
-				}
-
-				if (startAttemptsCounter >= MaximumStartAttempts)
-				{
-					// Блокируем дальнейшую работу, до рестарта системы пуска.
-					while(1);
-				}
-			}
-			else
-			{
-				startAttemptsCounter = 0;
-			}
-			
-		}
-	}
-	while(1);
-}
-
-bool StartEngine(uint16_t startDuration)
-{
-uint16_t startTime = Wdt_GetCurrentMsCount();
+	uint8_t *CurrentEepromPtr = (uint8_t *)3;
+	
+	eeprom_write_byte(++CurrentEepromPtr, startSensorValue);
+	eeprom_write_byte(++CurrentEepromPtr, getMaxCurrentSensorValue());
 
 	AlarmSound(1);
 
 	PowerOn();
 
-	// Подключаем пусковой конденсатор.
-	CapacitorOn();
+uint16_t startTime = Wdt_GetCurrentMsCount();
 
-	do
+	// CapacitorOn();
+
+	// Записываем 50 значений тока за ~4.8 секунд.
+	for (int i = 0; i < 50; ++i)
 	{
-		uint8_t sensorValue = getMaxCurrentSensorValue();
+		eeprom_write_byte(++CurrentEepromPtr, getMaxCurrentSensorValue());
 
-		if ( sensorValue < startSensorValue)
-		{
-			// Двигатель запущен.
-			// Отключаем пусковой конденсатор.
-			CapacitorOff();
-			
-			return true;
-		}
+		// Ждём окончания периода измерения = 96 мс.
+		while (!Wdt_IsTimerEnded(startTime, testDuration));
 	}
-	while(!Wdt_IsTimerEnded(startTime, startDuration));
+
+	// for (uint8_t i = 0; i < 50; ++i)
+	// {
+
+	// 	eeprom_write_byte(++CurrentEepromPtr, (uint8_t)0);
+
+	// }
+
+	// *CurrentEepromPtr = (uint8_t *)5;
+
+	// uint8_t lastSensorValue = 0; 
+	// uint8_t sensorValue; 
+	// uint8_t i = 0;
+
+	// while (i != 50)
+	// {
+	// 	sensorValue = getMaxCurrentSensorValue();
+
+	// 	uint8_t delta;
+
+	// 	if (sensorValue > lastSensorValue)
+	// 	{
+	// 		delta = sensorValue - lastSensorValue;
+	// 	}
+	// 	else
+	// 	{
+	// 		delta = lastSensorValue - sensorValue;
+	// 	}
+		
+	// 	if (delta > 1)
+	// 	{
+	// 		eeprom_write_byte(++CurrentEepromPtr, sensorValue);
+
+	// 		lastSensorValue = sensorValue;
+
+	// 		++i;
+	// 	}
+	// }
 	
-	// Неудачный старт.
-	// Отключаем пусковой конденсатор.
+	// CapacitorOff();
+
+	// Измерения завершены.
+	AlarmSound (2);
+
 	PowerOff();
 
-	CapacitorOff();
-
-	return false;
+	while(1);
 }
 
 uint8_t getMaxCurrentSensorValue()
@@ -187,7 +167,7 @@ int8_t sensorMax = 0;
 
 	uint16_t startTime = Wdt_GetCurrentMsCount();
 
-	while(!Wdt_IsTimerEnded(startTime, measurementTime))
+	do
 	{
 		sensorValue = Adc_Read();
 		
@@ -196,6 +176,7 @@ int8_t sensorMax = 0;
 			sensorMax = sensorValue;
 		}
 	}
+	while(!Wdt_IsTimerEnded(startTime, measurementTime));
 
 	return sensorMax;
 }

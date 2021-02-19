@@ -33,19 +33,30 @@ void Adc_Setup (void)
 	ADCSRA = (1 << ADPS2) | (0 << ADPS1) | (0 << ADPS0) | (1 << ADEN);
 
 	// Disable digital pin PB2
-	DIDR0 |= (1 << ADC1D);
+	//DIDR0 |= (1 << ADC1D);
 }
 
 uint8_t Adc_Read (void)
 {
 	// Start the conversion
 	// Set the prescaler to clock_CPU/16 = 75 kHz & enable ADC
-	ADCSRA = (1 << ADSC) | (1 << ADPS2) | (0 << ADPS1) | (0 << ADPS0) | (1 << ADEN);
+	ADCSRA |= (1 << ADSC);
 
 	// Wait for it to finish
 	while (ADCSRA & (1 << ADSC));
 
 	return ADCH;
+
+	// uint8_t L = ADCL;
+	// uint8_t H = ADCH;
+	
+	// return ((H << 8) | L) >> 2;
+
+	// uint8_t res = ADCL;
+	
+	// res = ADCH;
+	
+	// return res;
 }
 
 

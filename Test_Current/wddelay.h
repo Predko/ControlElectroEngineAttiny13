@@ -26,7 +26,6 @@
 #include <avr/interrupt.h>
 
 
-
 extern volatile  uint16_t  msCounter;
 
 // Возвращает значение счётчика 32-х миллисекундных интервалов.
