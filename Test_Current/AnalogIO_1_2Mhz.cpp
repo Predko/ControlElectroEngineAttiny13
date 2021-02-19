@@ -27,7 +27,7 @@
 void Adc_Setup (void)
 {
 	// Set the ADC input to PB2/ADC1, left adjust result, Vin references
-	ADMUX = (1 << MUX0) | (1 << ADLAR) | (0 << REFS0);
+	ADMUX = ((1 << MUX0) | (1 << ADLAR)) & ~(1 << REFS0);
 
 	// Set the prescaler to clock_CPU/16 = 75 kHz & enable ADC
 	ADCSRA = (1 << ADPS2) | (0 << ADPS1) | (0 << ADPS0) | (1 << ADEN);
@@ -36,7 +36,7 @@ void Adc_Setup (void)
 	//DIDR0 |= (1 << ADC1D);
 }
 
-uint8_t Adc_Read (void)
+uint16_t Adc_Read (void)
 {
 	// Start the conversion
 	// Set the prescaler to clock_CPU/16 = 75 kHz & enable ADC
@@ -46,17 +46,6 @@ uint8_t Adc_Read (void)
 	while (ADCSRA & (1 << ADSC));
 
 	return ADCH;
-
-	// uint8_t L = ADCL;
-	// uint8_t H = ADCH;
-	
-	// return ((H << 8) | L) >> 2;
-
-	// uint8_t res = ADCL;
-	
-	// res = ADCH;
-	
-	// return res;
 }
 
 

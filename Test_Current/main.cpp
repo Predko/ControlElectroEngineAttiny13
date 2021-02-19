@@ -66,15 +66,67 @@ const uint8_t *MaximumStartAttemptsEepromPtr = (uint8_t *)3;
 // Максимальное количество неудачных попыток запуска.
 uint8_t MaximumStartAttempts = 3;
 
+#define SIZE_ARRAY_CURRENTS 40
+
+uint8_t CurrentValues[SIZE_ARRAY_CURRENTS];
+
+
 int main(void)
 {
 	Setup();
 
 	ReadySound(500);
 
-	_delay_ms(5000);
+	_delay_ms(8000);
 
-	Loop();
+	PowerOn();
+
+	uint8_t currentValue;
+	uint8_t oldCurrentValue = getMaxCurrentSensorValue();
+
+	uint8_t i = SIZE_ARRAY_CURRENTS;
+	uint8_t *eepAdr = (uint8_t *)5;
+
+	//eeprom_write_word((uint16_t *)55, 0x0000);
+
+	eeprom_write_byte(eepAdr++, oldCurrentValue);
+	eeprom_write_byte(eepAdr++, 0x00);
+
+	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount());
+	eepAdr += 2;
+
+	while (i)
+	{
+		currentValue = getMaxCurrentSensorValue();
+
+		uint8_t delta = currentValue - oldCurrentValue;
+
+		if (delta > 1)	// 0.5 a
+		{
+			CurrentValues[SIZE_ARRAY_CURRENTS - i] = currentValue;
+			
+			oldCurrentValue = currentValue;
+			i--;
+		}
+	}
+
+	for (uint8_t k = 0; k != SIZE_ARRAY_CURRENTS; k++)
+	{
+		eeprom_write_byte(eepAdr++, CurrentValues[k]);	
+	}
+
+	eeprom_write_byte(eepAdr++, 0x00);
+
+	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount());
+	eepAdr += 2;
+
+	eeprom_write_word((uint16_t *)55, 0x1234);
+	// Save finished
+	
+	PowerOff();
+
+	while(1);
+
 }
 
 void Setup()
@@ -84,80 +136,6 @@ void Setup()
 	Adc_Setup();
 	
 	Wdt_Timer_Enable();
-}
-
-const uint16_t testDuration = 224 / 32;
-
-void Loop()
-{
-	uint8_t *CurrentEepromPtr = (uint8_t *)3;
-	
-	eeprom_write_byte(++CurrentEepromPtr, startSensorValue);
-	eeprom_write_byte(++CurrentEepromPtr, getMaxCurrentSensorValue());
-
-	AlarmSound(1);
-
-	PowerOn();
-
-uint16_t startTime = Wdt_GetCurrentMsCount();
-
-	// CapacitorOn();
-
-	// Записываем 50 значений тока за ~4.8 секунд.
-	for (int i = 0; i < 50; ++i)
-	{
-		eeprom_write_byte(++CurrentEepromPtr, getMaxCurrentSensorValue());
-
-		// Ждём окончания периода измерения = 96 мс.
-		while (!Wdt_IsTimerEnded(startTime, testDuration));
-	}
-
-	// for (uint8_t i = 0; i < 50; ++i)
-	// {
-
-	// 	eeprom_write_byte(++CurrentEepromPtr, (uint8_t)0);
-
-	// }
-
-	// *CurrentEepromPtr = (uint8_t *)5;
-
-	// uint8_t lastSensorValue = 0; 
-	// uint8_t sensorValue; 
-	// uint8_t i = 0;
-
-	// while (i != 50)
-	// {
-	// 	sensorValue = getMaxCurrentSensorValue();
-
-	// 	uint8_t delta;
-
-	// 	if (sensorValue > lastSensorValue)
-	// 	{
-	// 		delta = sensorValue - lastSensorValue;
-	// 	}
-	// 	else
-	// 	{
-	// 		delta = lastSensorValue - sensorValue;
-	// 	}
-		
-	// 	if (delta > 1)
-	// 	{
-	// 		eeprom_write_byte(++CurrentEepromPtr, sensorValue);
-
-	// 		lastSensorValue = sensorValue;
-
-	// 		++i;
-	// 	}
-	// }
-	
-	// CapacitorOff();
-
-	// Измерения завершены.
-	AlarmSound (2);
-
-	PowerOff();
-
-	while(1);
 }
 
 uint8_t getMaxCurrentSensorValue()
