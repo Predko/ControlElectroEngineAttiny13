@@ -5,7 +5,9 @@
 			"type": "shell",
 			"label": "Build my project",
 			"command": "make",
-			"args": [],
+			"args": [
+				"TARGET=main"
+			],
 			"problemMatcher": [
 				"$gcc"
 			],
@@ -14,8 +16,10 @@
 		{
 			"type": "shell",
 			"label": "Build Test_Current project",
-			"command": "Test_Current.bat",
-			"args": [],
+			"command": "make",
+			"args": [
+				"TARGET=testcurrent"
+			],
 			"problemMatcher": [
 				"$gcc"
 			],

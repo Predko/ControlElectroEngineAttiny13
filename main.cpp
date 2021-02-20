@@ -96,8 +96,8 @@ void Setup()
 	
 	Wdt_Timer_Enable();
 	
-	// Ready signal for 500 ms
-	ReadySound(500);
+	// Ready signal.
+	ReadySound();
 }
 
 void Loop()
@@ -182,12 +182,12 @@ uint16_t startTime = Wdt_GetCurrentMsCount();
 
 uint8_t getMaxCurrentSensorValue()
 {
-int8_t sensorValue;             // value read from the sensor
-int8_t sensorMax = 0;
+uint8_t sensorValue;             // value read from the sensor
+uint8_t sensorMax = 0;
 
 	uint16_t startTime = Wdt_GetCurrentMsCount();
 
-	while(!Wdt_IsTimerEnded(startTime, measurementTime))
+	do
 	{
 		sensorValue = Adc_Read();
 		
@@ -196,6 +196,7 @@ int8_t sensorMax = 0;
 			sensorMax = sensorValue;
 		}
 	}
+	while(!Wdt_IsTimerEnded(startTime, measurementTime));
 
 	return sensorMax;
 }

@@ -35,40 +35,43 @@ CFLAGS = \
 LFLAGS = -v
 #-funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums 
 
-TARGET = $(BUILDDIR)/main
+TARGET = main
+TARGETPATH = $(BUILDDIR)/$(TARGET)
 
 
 # Add inputs and outputs from these tool invocations to the build variables 
-SOURCES = main.cpp \
+SOURCES = $(TARGET).cpp \
 wddelay.cpp \
 AnalogIO_1_2Mhz.cpp \
 soundsignals.cpp \
 tone.cpp 
 
-OBJECTS =  $(BUILDDIR)/main.o \
+OBJECTS =  $(TARGETPATH).o \
 $(BUILDDIR)/wddelay.o \
 $(BUILDDIR)/AnalogIO_1_2Mhz.o \
 $(BUILDDIR)/soundsignals.o \
 $(BUILDDIR)/tone.o 
 
 
-$(BUILDDIR)/main.hex: $(OBJECTS)
+$(TARGETPATH).hex: $(OBJECTS)
 	@echo Building target: $@
 	@echo Invoking:  avr-gcc C Linker
-	$(CC) -o$(TARGET).elf $(OBJECTS) $(LIBS) -Wl,-Map=$(TARGET).map -Wl,--start-group -Wl,-lm  \
+	$(CC) -o$(TARGETPATH).elf $(OBJECTS) $(LIBS) -Wl,-Map=$(TARGETPATH).map -Wl,--start-group -Wl,-lm  \
 -Wl,--end-group -Wl,--gc-sections -mmcu=attiny13
 
 	@echo Finished building target: $@
-	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures  $(TARGET).elf $(TARGET).hex
+	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures \
+$(TARGETPATH).elf $(TARGETPATH).hex
 
-	$(OBJCOPY) -j .eeprom  --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0  --no-change-warnings \
--O ihex $(TARGET).elf $(TARGET).eep || exit 0
+	$(OBJCOPY) -j .eeprom  --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0 \
+--no-change-warnings -O ihex $(TARGETPATH).elf $(TARGETPATH).eep || exit 0
 
-	$(OBJDUMP) -h -S $(TARGET).elf > $(TARGET).lss
+	$(OBJDUMP) -h -S $(TARGETPATH).elf > $(TARGETPATH).lss
 
-	$(OBJCOPY) -O srec -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures $(TARGET).elf $(TARGET).srec
+	$(OBJCOPY) -O srec -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures \
+$(TARGETPATH).elf $(TARGETPATH).srec
 
-	$(SIZE) $(TARGET).elf
+	$(SIZE) $(TARGETPATH).elf
 
 
 # AVR/GNU C Compiler

@@ -33,6 +33,7 @@
 #include "tone.h"
 
 
+
 const uint8_t START_RELAY = _BV(PB4);	// Включение - низкий уровень (0), выключение - высокий (1)
 const uint8_t SUPPLY_RELAY = _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
 
@@ -70,12 +71,9 @@ uint8_t MaximumStartAttempts = 3;
 
 uint8_t CurrentValues[SIZE_ARRAY_CURRENTS];
 
-
-int main(void)
+void TestCurrent()
 {
-	Setup();
-
-	ReadySound(500);
+   	ReadySound();
 
 	_delay_ms(8000);
 
@@ -84,33 +82,47 @@ int main(void)
 	uint8_t currentValue;
 	uint8_t oldCurrentValue = getMaxCurrentSensorValue();
 
-	uint8_t i = SIZE_ARRAY_CURRENTS;
 	uint8_t *eepAdr = (uint8_t *)5;
 
-	//eeprom_write_word((uint16_t *)55, 0x0000);
+	eeprom_write_byte(eepAdr++, oldCurrentValue);
+
+	CapacitorOn();
+
+	oldCurrentValue = getMaxCurrentSensorValue();
 
 	eeprom_write_byte(eepAdr++, oldCurrentValue);
-	eeprom_write_byte(eepAdr++, 0x00);
 
 	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount());
 	eepAdr += 2;
 
-	while (i)
+	uint8_t baseCurrent = oldCurrentValue - (oldCurrentValue >> 2);
+
+	uint8_t i = 0;
+
+	while (i < SIZE_ARRAY_CURRENTS)
 	{
 		currentValue = getMaxCurrentSensorValue();
 
 		uint8_t delta = currentValue - oldCurrentValue;
 
-		if (delta > 1)	// 0.5 a
+		if (delta > 2)	// 1 A
 		{
-			CurrentValues[SIZE_ARRAY_CURRENTS - i] = currentValue;
+			CurrentValues[i] = currentValue;
 			
 			oldCurrentValue = currentValue;
-			i--;
+			++i;
+		}
+
+		// Если значение тока ниже базового, отключаем конденсатор и прекращаем измерения
+		if (currentValue  < baseCurrent)
+		{
+			CapacitorOff();
+
+			break;
 		}
 	}
 
-	for (uint8_t k = 0; k != SIZE_ARRAY_CURRENTS; k++)
+	for (uint8_t k = 0; k != i; k++)
 	{
 		eeprom_write_byte(eepAdr++, CurrentValues[k]);	
 	}
@@ -118,15 +130,29 @@ int main(void)
 	eeprom_write_byte(eepAdr++, 0x00);
 
 	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount());
-	eepAdr += 2;
 
-	eeprom_write_word((uint16_t *)55, 0x1234);
-	// Save finished
-	
-	PowerOff();
+	AlarmSound(2);
 
-	while(1);
+	while(1)
+	{
+		currentValue = getMaxCurrentSensorValue();
+		
+		// Если значение тока ниже базового, отключаем конденсатор и прекращаем измерения
+		if (currentValue  < baseCurrent)
+		{
+			CapacitorOff();
 
+			baseCurrent = 0;
+		}
+	}
+}
+
+
+int main(void)
+{
+	Setup();
+
+	TestCurrent();
 }
 
 void Setup()
@@ -140,8 +166,8 @@ void Setup()
 
 uint8_t getMaxCurrentSensorValue()
 {
-int8_t sensorValue;             // value read from the sensor
-int8_t sensorMax = 0;
+uint8_t sensorValue;             // value read from the sensor
+uint8_t sensorMax = 0;
 
 	uint16_t startTime = Wdt_GetCurrentMsCount();
 
@@ -154,7 +180,7 @@ int8_t sensorMax = 0;
 			sensorMax = sensorValue;
 		}
 	}
-	while(!Wdt_IsTimerEnded(startTime, measurementTime));
+	while(!Wdt_IsTimerEnded(startTime, 1)); // measurementTime
 
 	return sensorMax;
 }

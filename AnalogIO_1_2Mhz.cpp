@@ -39,7 +39,6 @@ void Adc_Setup (void)
 uint8_t Adc_Read (void)
 {
 	// Start the conversion
-	// Set the prescaler to clock_CPU/16 = 75 kHz & enable ADC
 	ADCSRA = (1 << ADSC);
 
 	// Wait for it to finish
