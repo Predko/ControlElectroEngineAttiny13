@@ -15,8 +15,8 @@
 //                                              	 +-\/-+
 //	   					(PCINT5/RESET/ADC0/dW) PB5  1|    |8  Vcc
 //	Power supply relay -    (PCINT3/CLKI/ADC3) PB3  2|    |7  PB2 (SCK/ADC1/T0/PCINT2) 				- Current sensor pin
-//	Start relay        -    	 (PCINT4/ADC2) PB4  3|    |6  PB1 PWM (MISO/AIN1/OC0B/INT0/PCINT1) 	- Tone port
-//                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)
+//	Reserved	       -    	 (PCINT4/ADC2) PB4  3|    |6  PB1 PWM (MISO/AIN1/OC0B/INT0/PCINT1) 	- Tone port
+//                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)		- Start relay
 //                                             		 +----+
 
 
@@ -29,7 +29,7 @@
 #include <avr/io.h>
 #include <stdbool.h>
 
-#define START_RELAY _BV(PB4);	// Включение - низкий уровень (0), выключение - высокий (1)
+#define START_RELAY _BV(PB0);	// Включение - низкий уровень (0), выключение - высокий (1)
 #define SUPPLY_RELAY _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
 
 #define MAX_CURRENT_SENSOR_VALUE    250 // Максимальное значение датчика тока, считающееся аварийным.
