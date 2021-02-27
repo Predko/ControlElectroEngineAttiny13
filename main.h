@@ -29,8 +29,8 @@
 #include <avr/io.h>
 #include <stdbool.h>
 
-#define START_RELAY _BV(PB0);	// Включение - низкий уровень (0), выключение - высокий (1)
-#define SUPPLY_RELAY _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
+#define START_RELAY _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
+#define SUPPLY_RELAY _BV(PB0);	// Включение - низкий уровень (0), выключение - высокий (1)
 
 #define MAX_CURRENT_SENSOR_VALUE    250 // Максимальное значение датчика тока, считающееся аварийным.
 

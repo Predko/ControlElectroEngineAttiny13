@@ -145,7 +145,7 @@ void TestCurrent()
 		}
 
 		// Ограничиваем время измерения.
-		if (Wdt_IsTimerEnded(startTime, 10000 / 32))
+		if (Wdt_IsTimerEnded(startTime, 15000 / 32))
 		{
 			PowerOff();
 			break;
@@ -169,15 +169,15 @@ void TestCurrent()
 
 	while(1)
 	{
-		sensorValue = getMaxCurrentSensorValue();
+		// sensorValue = getMaxCurrentSensorValue();
 		
-		// Если значение тока ниже базового, отключаем конденсатор и прекращаем измерения
-		if (sensorValue  < baseCurrent)
-		{
-			CapacitorOff();
+		// // Если значение тока ниже базового, отключаем конденсатор и прекращаем измерения
+		// if (sensorValue  < baseCurrent)
+		// {
+		// 	CapacitorOff();
 
-			baseCurrent = 0;
-		}
+		// 	baseCurrent = 0;
+		// }
 	}
 }
 

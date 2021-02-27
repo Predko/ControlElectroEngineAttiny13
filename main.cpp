@@ -29,9 +29,6 @@
 #include "soundsignals.h"
 #include "tone.h"
 
-const uint8_t START_RELAY = _BV(PB4);	// Включение - низкий уровень (0), выключение - высокий (1)
-const uint8_t SUPPLY_RELAY = _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
-
 // Время измерения в 32-х миллисекундных интервалах.
 const uint16_t  measurementTime = 64 / 32;
 
