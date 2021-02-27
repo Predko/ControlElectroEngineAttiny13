@@ -75,7 +75,7 @@ $(TARGETPATH).elf $(TARGETPATH).srec
 
 
 # AVR/GNU C Compiler
-$(BUILDDIR)/%.o: %.cpp %.h
+$(BUILDDIR)/%.o: %.cpp
 	@echo Building file: $<
 	@echo Invoking: avr-gcc C Compiler 
 	${CC} -mmcu=${MCU} -c $(CFLAGS) -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

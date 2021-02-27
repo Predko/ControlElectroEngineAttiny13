@@ -157,7 +157,7 @@ uint16_t startTime = Wdt_GetCurrentMsCount();
 	{
 		uint8_t sensorValue = getMaxCurrentSensorValue();
 
-		if ( sensorValue < startSensorValue)
+		if ( sensorValue < startSensorValue?)
 		{
 			// Двигатель запущен.
 			// Отключаем пусковой конденсатор.
