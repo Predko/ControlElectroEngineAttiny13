@@ -18,6 +18,20 @@
 //	Reserved	       -    	 (PCINT4/ADC2) PB4  3|    |6  PB1 PWM (MISO/AIN1/OC0B/INT0/PCINT1) 	- Tone port
 //                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)		- Start relay
 //                                             		 +----+
+// Алгоритм запуска двигателя:
+// 	- Подача предупреждающего сигнала. Пауза 1 сек.
+// 	- Включение питания.
+// 	- Включение пускового конденсатора.
+// 	- Пауза 1.5 секунд(минимум 800 мс).
+// 	- Выключение конденсатора
+//  - Пауза 1 секунда(минимум 300 мс), на стабилизацию рабочего тока после отключения конденсатора
+// 	- Проверка тока - если ток > (operatingCurrent * KStartCurrent) 
+//		- Процедура запуска не удалась.
+// 		- Инкрементация счётчика попыток старта.
+//	- Если число попыток старта не превысило максимальное - повторяем процедуру запуска.
+//	- Иначе	- Подаём сигнал аварии, прекращаем работу.
+//	
+
 
 #include "main.h"
 #include <avr/io.h>
@@ -39,26 +53,24 @@ const uint16_t  measurementTime = 64 / 32;
 // 30A sensor
 #define K_Current 66L
 
-#define operatingCurrent 14  // (Ampere)
+#define operatingCurrent 10  // (Ampere)
 
-#define KStartCurrent 1.5	// Коэффициент превышения тока для начала процедуры запуска.
+#define KStartCurrent 2.0	// Коэффициент превышения тока для начала процедуры запуска.
 
 // (K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)
-#define K0 ((K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)
+#define K0 ((K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)	// = 9,5563776
 
-const uint8_t *startSensorValueEepromPtr = (uint8_t *)0;
 // Значение сенсора тока, выше которого начинается процедура запуска двигателя.
-uint8_t startSensorValue = (uint8_t)(128.0 + operatingCurrent * K0);
-
-const uint16_t *maxStartTimeEepromPtr = (uint16_t *)1;
+uint8_t startSensorValue = (uint8_t)(128.0 + operatingCurrent * K0);	// = 223
+const uint8_t *startSensorValueEepromPtr = (uint8_t *)0;
 
 // Максимальное время старта в 32-х миллисекундных интервалах.
+uint16_t maxStartTime = 2000 / 32;	// = 62 * 32 ms.
+const uint16_t *maxStartTimeEepromPtr = (uint16_t *)1;
 
-uint16_t maxStartTime = 3200 / 32;
-
-const uint8_t *MaximumStartAttemptsEepromPtr = (uint8_t *)3;
 // Максимальное количество неудачных попыток запуска.
 uint8_t MaximumStartAttempts = 3;
+const uint8_t *MaximumStartAttemptsEepromPtr = (uint8_t *)3;
 
 int main(void)
 {
@@ -101,80 +113,62 @@ void Loop()
 {
 uint8_t startAttemptsCounter = 0;
 
+	PowerOn();
+
 	do
 	{
-		uint8_t sensorValue = getMaxCurrentSensorValue();
+		// Пока значения тока рабочие - ничего не делаем.
+		while (getMaxCurrentSensorValue() < startSensorValue);
 
-		if ( sensorValue > startSensorValue )
+		// Ток высокий - старт двигателя.
+		StartEngine (maxStartTime);
+		
+		_delay_ms(1000); // Для стабилизации тока.
+
+		// Проверяем, запущен ли двигатель.
+		if ( getMaxCurrentSensorValue() > startSensorValue )
 		{
-			if (StartEngine (maxStartTime) == false)
+			// Не удалось запустить двигатель, выключаем питание. 
+			PowerOff();
+
+			// И подаём сигнал и пауза на 4 секунд.
 			{
-				startAttemptsCounter++;
+				AlarmSound (2);
 
-				// Неудалось запустить двигатель, подаём сигнал и выключаем питание на 10 секунд. 
-				{
-					AlarmSound (2);
-
-					_delay_ms (1000);
-
-					AlarmSound (2);
-
-					_delay_ms (1000);
-
-					AlarmSound (2);
-
-					_delay_ms (8000);
-				}
-
-				if (startAttemptsCounter >= MaximumStartAttempts)
-				{
-					// Блокируем дальнейшую работу, до рестарта системы пуска.
-					while(1);
-				}
-			}
-			else
-			{
-				startAttemptsCounter = 0;
+				_delay_ms (4000);
 			}
 			
+			startAttemptsCounter++;
+
+			if (startAttemptsCounter > MaximumStartAttempts)
+			{
+				EndSound();
+				
+				while(1); // Превышено количество попыток старта - стоп.
+			}
+
+			// Повторяем запуск.
+			PowerOn();
+		}
+		else
+		{
+			// Двигатель запущен.
+			startAttemptsCounter = 0;
 		}
 	}
 	while(1);
 }
 
-bool StartEngine(uint16_t startDuration)
+void StartEngine(uint16_t startDuration)
 {
 uint16_t startTime = Wdt_GetCurrentMsCount();
 
-	AlarmSound(1);
-
-	PowerOn();
-
-	// Подключаем пусковой конденсатор.
+	// Подключаем пусковой конденсатор на время запуска.
 	CapacitorOn();
 
-	do
-	{
-		uint8_t sensorValue = getMaxCurrentSensorValue();
-
-		if ( sensorValue < startSensorValue?)
-		{
-			// Двигатель запущен.
-			// Отключаем пусковой конденсатор.
-			CapacitorOff();
-			
-			return true;
-		}
-	}
 	while(!Wdt_IsTimerEnded(startTime, startDuration));
-	
-	// Неудачный старт.
-	// Отключаем пусковой конденсатор.
-	PowerOff();
 
 	CapacitorOff();
-
-	return false;
 }
 
 uint8_t getMaxCurrentSensorValue()

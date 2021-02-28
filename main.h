@@ -42,11 +42,9 @@
 #define START_RELAY _BV(PB4);	// Включение - низкий уровень (0), выключение - высокий (1)
 #define SUPPLY_RELAY _BV(PB3);	// Включение - низкий уровень (0), выключение - высокий (1)
 
-#define MAX_CURRENT_SENSOR_VALUE    250 // Максимальное значение датчика тока, считающееся аварийным.
-
 uint8_t getMaxCurrentSensorValue();
 
-bool StartEngine(uint16_t startDuration);
+void StartEngine(uint16_t startDuration);
 
 void OutputPinsInit();
 

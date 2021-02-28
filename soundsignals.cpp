@@ -46,7 +46,6 @@ void AlarmSound(uint8_t numberOfSignals)
   NoTone(); // Выключаем звук
 }
 
-
 void ReadySound()
 {
   ToneInit();
@@ -56,4 +55,20 @@ void ReadySound()
   _delay_ms(1000);  // ReadySoundDuration
 
   NoTone(); // Выключаем звук
+}
+
+void EndSound()
+{
+  ToneInit();
+
+  for (uint8_t i = 0; i != 3; i++)
+  {
+    Tone(HighSound);
+
+    _delay_ms(300);
+
+    NoTone();
+
+    _delay_ms(300);
+  }
 }

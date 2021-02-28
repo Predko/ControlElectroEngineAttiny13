@@ -36,4 +36,6 @@ void AlarmSound(uint8_t numberOfSignals);
 
 void ReadySound();
 
+void EndSound();
+
 #endif

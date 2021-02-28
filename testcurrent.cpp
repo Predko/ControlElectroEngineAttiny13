@@ -53,9 +53,9 @@ const uint16_t  measurementTime = 64 / 32;
 // 30A sensor
 #define K_Current 66L
 
-#define operatingCurrent 14  // (Ampere)
+#define operatingCurrent 10  // (Ampere)
 
-#define KStartCurrent 1.5	// Коэффициент превышения тока для начала процедуры запуска.
+#define KStartCurrent 2.0	// Коэффициент превышения тока для начала процедуры запуска.
 
 // (K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)
 #define K0 (float)((K_Current * 256 * 1.414 * KStartCurrent) / 5000.0)	// для 66l = 7.167
@@ -84,18 +84,16 @@ void TestCurrent()
 
 	_delay_ms(8000);
 
+	ReadySound();
+
 	PowerOn();
 
 	_delay_ms(200);
-
-	uint8_t sensorValue;
 	uint8_t oldCurrentValue = getMaxCurrentSensorValue();
 
-	uint8_t *eepAdr = (uint8_t *)5;
+	uint8_t *eepAdr = (uint8_t *)0;
 
 	eeprom_write_byte(eepAdr++, oldCurrentValue);
-
-	CapacitorOn();
 
 	_delay_ms(200);
 	
@@ -108,85 +106,49 @@ void TestCurrent()
 	eeprom_write_word((uint16_t *)eepAdr, startTime);
 	eepAdr += 2;
 
-	uint8_t baseCurrent = oldCurrentValue - (oldCurrentValue >> 2);
-
 	uint8_t i = 0;
 
-	while (i < SIZE_ARRAY_CURRENTS)
+	while (!Wdt_IsTimerEnded(startTime, 5120 / 32))
 	{
-		sensorValue = getMaxCurrentSensorValue();
+		eeprom_write_byte(eepAdr++, getMaxCurrentSensorValue());
 
-		uint8_t delta = (sensorValue > oldCurrentValue) ? (sensorValue - oldCurrentValue)
-														 : (oldCurrentValue - sensorValue);
+		_delay_ms(300);
+		i++;
 
-		if (delta > 2)	// 1 A
+		if (i == 5)
 		{
-			CurrentValues[i] = sensorValue;
+			CapacitorOn();
+
 			
-			oldCurrentValue = sensorValue;
-			++i;
 		}
-
-		// Если значение тока ниже базового, отключаем конденсатор и прекращаем измерения
-		if (sensorValue  < baseCurrent)
-		{
-			CapacitorOff();
-
-			break;
-		}
-
-		// Проверяем, не возникла ли аварийная ситуация.
-		if (sensorValue > MAX_CURRENT_SENSOR_VALUE)
-		{
-			AlarmSound(3);
-
-			CapacitorOff();
-
-			PowerOff();
-
-			while(1);
-		}
-
-		// Ограничиваем время запуска.
-		if (Wdt_IsTimerEnded(startTime, maxStartTime))
-		{
-			CapacitorOff();
-		}
-
-		// Ограничиваем время измерения.
-		if (Wdt_IsTimerEnded(startTime, 15000 / 32))
-		{
-			PowerOff();
-			break;
-		}
-
-
 	}
+	
+	CapacitorOff();
 
-	for (uint8_t k = 0; k != i; k++)
+	eeprom_write_byte(eepAdr++, 0);
+	eeprom_write_byte(eepAdr++, i);
+	eeprom_write_byte(eepAdr++, 0);
+
+	while (!Wdt_IsTimerEnded(startTime, 10240 / 32))
 	{
-		eeprom_write_byte(eepAdr++, CurrentValues[k]);	
-	}
+		eeprom_write_byte(eepAdr++, getMaxCurrentSensorValue());
 
-	eeprom_write_byte(eepAdr++, 0x00);
+		_delay_ms(300);
+		i++;
+	}
+	
+	PowerOff();
+
+	eeprom_write_word((uint16_t *)eepAdr, 0);
+	eepAdr += 2;
 
 	eeprom_write_byte(eepAdr++, i);
-
 	eeprom_write_word((uint16_t *)eepAdr, Wdt_GetCurrentMsCount());
 
 	AlarmSound(2);
 
 	while(1)
 	{
-		// sensorValue = getMaxCurrentSensorValue();
-		
-		// // Если значение тока ниже базового, отключаем конденсатор и прекращаем измерения
-		// if (sensorValue  < baseCurrent)
-		// {
-		// 	CapacitorOff();
-
-		// 	baseCurrent = 0;
-		// }
 	}
 }
 
