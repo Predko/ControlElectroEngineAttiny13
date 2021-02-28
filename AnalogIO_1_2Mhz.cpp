@@ -50,20 +50,6 @@ uint8_t Adc_Read (void)
 
 void Pwm_Setup (uint8_t pinBit)
 {
-	//DDRB   |= (1 << PB0);    //Ножка PB0 как выход(ШИМ)
-
-	// TCCR0A = (1 << COM0A1) | (1 << WGM00);  //выбор ШИМ  с фазовой коррекцией
-	// TCCR0B = 0x05; //Предделитель - 1024 и старт таймера
-	// TCNT0 = 0;     // Сброс счетчика прерываний(0-255)
-	// OCR0A=0;       //Выбор Значения ШИМ
-	
-	// TIMSK0=0x04;//Разрешить выполнение прерываний по совпадению в OCR0A	 		
-	// sei();// Разрешить глобальные прерывания
-    
-    // Set Timer 0 prescaler to clock/8.
-    // At 9.6 MHz this is 1.2 MHz.
-    // See ATtiny13 datasheet, Table 11.9.
-    
 	DDRB |= pinBit;
  
     // Set to 'Fast PWM' mode
