@@ -131,20 +131,22 @@ uint8_t startAttemptsCounter = 0;
 			// Не удалось запустить двигатель, выключаем питание. 
 			PowerOff();
 
-			// И подаём сигнал и пауза на 4 секунд.
 			{
-				AlarmSound (2);
+				// И подаём сигнал и пауза на 4 секунд.
+				{
+					AlarmSound (2);
 
-				_delay_ms (4000);
-			}
-			
-			startAttemptsCounter++;
-
-			if (startAttemptsCounter > MaximumStartAttempts)
-			{
-				EndSound();
+					_delay_ms (4000);
+				}
 				
-				while(1); // Превышено количество попыток старта - стоп.
+				startAttemptsCounter++;
+
+				if (startAttemptsCounter > MaximumStartAttempts)
+				{
+					EndSound();
+					
+					while(1); // Превышено количество попыток старта - стоп.
+				}
 			}
 
 			// Повторяем запуск.

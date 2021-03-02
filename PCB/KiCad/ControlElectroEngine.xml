@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <export version="D">
   <design>
-    <source>D:\MyProgram\WinAvr\EEC_Project\EEC_Project\EEC_Project\EEC_Project.sch</source>
+    <source>d:\MyProgram\WinAvr\ControlElectroEngineAttiny13\PCB\KiCad\ControlElectroEngine.sch</source>
     <date>14.01.2021 11:20:11</date>
     <tool>Eeschema (5.1.9)-1</tool>
     <sheet number="1" name="/" tstamps="/">
@@ -10,7 +10,7 @@
         <company/>
         <rev/>
         <date/>
-        <source>EEC_Project.sch</source>
+        <source>ControlElectroEngine.sch</source>
         <comment number="1" value=""/>
         <comment number="2" value=""/>
         <comment number="3" value=""/>
