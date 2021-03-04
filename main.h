@@ -19,7 +19,7 @@
 //	Start relay	       -    	 (PCINT4/ADC2) PB4  3|    |6  PB1 PWM (MISO/AIN1/OC0B/INT0/PCINT1) 	- Tone port
 //                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)		- Reserved
 //                                             		 +----+
-//	Вариант 2.
+//	Вариант 2. - Пин "Start relay" PB4 заменён на PB0, что освобождает дополнительный аналоговый вход - PB4.
 //                            
 //                                              	 +-\/-+
 //	   					(PCINT5/RESET/ADC0/dW) PB5  1|    |8  Vcc
@@ -27,6 +27,18 @@
 //	Reserved	       -    	 (PCINT4/ADC2) PB4  3|    |6  PB1 PWM (MISO/AIN1/OC0B/INT0/PCINT1) 	- Tone port
 //                                  		   GND  4|    |5  PB0 PWM (MOSI/AIN0/OC0A/PCINT0)		- Start relay
 //                                             		 +----+
+// Алгоритм запуска двигателя:
+// 	- Подача предупреждающего сигнала. Пауза 1 сек.
+// 	- Включение питания.
+// 	- Включение пускового конденсатора.
+// 	- Пауза 1.5 секунд(минимум 800 мс).
+// 	- Выключение конденсатора
+//  - Пауза 1 секунда(минимум 300 мс), на стабилизацию рабочего тока после отключения конденсатора
+// 	- Проверка тока - если ток > (operatingCurrent * KStartCurrent) 
+//		- Процедура запуска не удалась.
+// 		- Инкрементация счётчика попыток старта.
+//	- Если число попыток старта не превысило максимальное - повторяем процедуру запуска.
+//	- Иначе	- Подаём сигнал аварии, прекращаем работу.
 
 
 #ifndef MAIN_H
@@ -44,7 +56,7 @@
 
 uint8_t getMaxCurrentSensorValue();
 
-void StartEngine(uint16_t startDuration);
+int8_t StartEngine(uint16_t startDuration);
 
 void OutputPinsInit();
 
